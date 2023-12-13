@@ -3,9 +3,31 @@ import {
   ChangeDetectionStrategy,
   Component,
   ContentChild,
+  Directive,
   Input,
   TemplateRef,
 } from '@angular/core';
+
+interface ListItemContext<T> {
+  $implicit: T;
+  appList: T;
+  index: number;
+}
+
+@Directive({
+  selector: 'ng-template[listItemTemplate]',
+  standalone: true,
+})
+export class ListItemTemplateDirective<T> {
+  @Input({ required: true }) listItemTemplate!: T[];
+
+  static ngTemplateContextGuard<T>(
+    _directive: ListItemTemplateDirective<T>,
+    ctx: unknown,
+  ): ctx is ListItemContext<T> {
+    return true;
+  }
+}
 
 @Component({
   selector: 'list',
@@ -27,6 +49,6 @@ import {
 export class ListComponent<TItem extends object> {
   @Input() list!: TItem[];
 
-  @ContentChild('listRef', { read: TemplateRef })
-  listTemplateRef!: TemplateRef<unknown>;
+  @ContentChild(ListItemTemplateDirective, { read: TemplateRef })
+  listTemplateRef!: TemplateRef<ListItemContext<TItem>>;
 }
