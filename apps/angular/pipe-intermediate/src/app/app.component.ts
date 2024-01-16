@@ -1,14 +1,31 @@
 import { NgFor } from '@angular/common';
-import { Component } from '@angular/core';
+import { Component, Pipe, PipeTransform } from '@angular/core';
+
+@Pipe({
+  name: 'func',
+  pure: true,
+  standalone: true,
+})
+export class FuncPipe implements PipeTransform {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  transform<T, F extends (value: T, ...args: any[]) => any>(
+    value: T,
+    f: F,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ...args: F extends (value: T, ...args: infer Args) => any ? Args : []
+  ): ReturnType<F> {
+    return f(value, ...args);
+  }
+}
 
 @Component({
   standalone: true,
-  imports: [NgFor],
+  imports: [NgFor, FuncPipe],
   selector: 'app-root',
   template: `
     <div *ngFor="let person of persons; let index = index; let isFirst = first">
-      {{ showName(person.name, index) }}
-      {{ isAllowed(person.age, isFirst) }}
+      {{ person.name | func: showName : index }}
+      {{ person.age | func: isAllowed : isFirst }}
     </div>
   `,
 })
