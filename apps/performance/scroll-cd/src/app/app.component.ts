@@ -1,6 +1,15 @@
 import { AsyncPipe, NgIf } from '@angular/common';
-import { Component, HostListener } from '@angular/core';
-import { BehaviorSubject } from 'rxjs';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  NgZone,
+  OnInit,
+  inject,
+} from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { BehaviorSubject, EMPTY, distinctUntilChanged, fromEvent } from 'rxjs';
+import { catchError, map } from 'rxjs/operators';
 
 @Component({
   standalone: true,
@@ -30,17 +39,35 @@ import { BehaviorSubject } from 'rxjs';
       }
     `,
   ],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class AppComponent {
+export class AppComponent implements OnInit {
+  private ngZone = inject(NgZone);
+  private ngDestroyRef = inject(DestroyRef);
+
   title = 'scroll-cd';
 
   private displayButtonSubject = new BehaviorSubject<boolean>(false);
   displayButton$ = this.displayButtonSubject.asObservable();
 
-  @HostListener('window:scroll', ['$event'])
-  onScroll() {
-    const pos = window.pageYOffset;
-    this.displayButtonSubject.next(pos > 50);
+  ngOnInit() {
+    this.ngZone.runOutsideAngular(() => {
+      fromEvent(window, 'scroll')
+        .pipe(
+          map(() => {
+            const pos = window.pageYOffset;
+            return pos > 50;
+          }),
+          distinctUntilChanged(),
+          catchError(() => EMPTY),
+          takeUntilDestroyed(this.ngDestroyRef),
+        )
+        .subscribe((displayButton) => {
+          this.ngZone.run(() => {
+            this.displayButtonSubject.next(displayButton);
+          });
+        });
+    });
   }
 
   goToTop() {
