@@ -1,6 +1,8 @@
+import { CDFlashingDirective } from '@angular-challenges/shared/directives';
 import { AsyncPipe, NgFor, NgIf } from '@angular/common';
 import { Component, Input, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
+import { map, startWith } from 'rxjs';
 import { FakeServiceService } from './fake.service';
 
 interface MenuItem {
@@ -12,6 +14,7 @@ interface MenuItem {
   selector: 'app-nav',
   standalone: true,
   imports: [RouterLink, RouterLinkActive, NgFor],
+  hostDirectives: [CDFlashingDirective],
   template: `
     <ng-container *ngFor="let menu of menus">
       <a
@@ -41,15 +44,7 @@ export class NavigationComponent {
   standalone: true,
   imports: [NavigationComponent, NgIf, AsyncPipe],
   template: `
-    <ng-container *ngIf="info$ | async as info">
-      <ng-container *ngIf="info !== null; else noInfo">
-        <app-nav [menus]="getMenu(info)" />
-      </ng-container>
-    </ng-container>
-
-    <ng-template #noInfo>
-      <app-nav [menus]="getMenu('')" />
-    </ng-template>
+    <app-nav *ngIf="menus$ | async as menus" [menus]="menus" />
   `,
   host: {},
 })
@@ -58,7 +53,12 @@ export class MainNavigationComponent {
 
   readonly info$ = this.fakeBackend.getInfoFromBackend();
 
-  getMenu(prop: string) {
+  readonly menus$ = this.info$.pipe(
+    map((prop) => this.getMenu(prop)),
+    startWith(this.getMenu('')),
+  );
+
+  private getMenu(prop: string) {
     return [
       { path: '/foo', name: `Foo ${prop}` },
       { path: '/bar', name: `Bar ${prop}` },
