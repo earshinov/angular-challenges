@@ -7,7 +7,13 @@ import { Component } from '@angular/core';
   imports: [BtnDisabledDirective, BtnHelmetDirective],
   selector: 'app-root',
   template: `
-    <button btnDisabled hlm>Coucou</button>
+    <button
+      btnDisabled
+      #btnDisabled="btnDisabled"
+      [hlm]
+      [hlmState]="btnDisabled.state()">
+      Coucou
+    </button>
   `,
 })
 export class AppComponent {}

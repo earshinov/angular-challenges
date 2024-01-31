@@ -6,6 +6,7 @@ export type ButtonState = 'enabled' | 'disabled';
 
 @Directive({
   selector: 'button[btnDisabled]',
+  exportAs: 'btnDisabled',
   standalone: true,
   host: {
     '(click)': 'toggleState()',
