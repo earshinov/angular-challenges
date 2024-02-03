@@ -1,135 +1,87 @@
-import { Injectable, inject } from '@angular/core';
-import {
-  ComponentStore,
-  OnStateInit,
-  OnStoreInit,
-  tapResponse,
-} from '@ngrx/component-store';
-import { pipe } from 'rxjs';
-import { filter, mergeMap, tap } from 'rxjs/operators';
+import { Injectable, computed, inject, signal } from '@angular/core';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
+import { Observable } from 'rxjs';
+import { filter, map, switchMap, tap } from 'rxjs/operators';
 import { Photo } from '../photo.model';
 import { PhotoService } from '../photos.service';
 
 const PHOTO_STATE_KEY = 'photo_search';
 
-export interface PhotoState {
-  photos: Photo[];
+interface LocalStorageData {
   search: string;
   page: number;
-  pages: number;
-  loading: boolean;
-  error: unknown;
 }
 
-const initialState: PhotoState = {
-  photos: [],
-  search: '',
-  page: 1,
-  pages: 1,
-  loading: false,
-  error: '',
-};
-
 @Injectable()
-export class PhotoStore
-  extends ComponentStore<PhotoState>
-  implements OnStoreInit, OnStateInit
-{
+export class PhotoStore {
   private photoService = inject(PhotoService);
 
-  private readonly photos$ = this.select((s) => s.photos);
-  private readonly search$ = this.select((s) => s.search);
-  private readonly page$ = this.select((s) => s.page);
-  private readonly pages$ = this.select((s) => s.pages);
-  private readonly error$ = this.select((s) => s.error);
-  private readonly loading$ = this.select((s) => s.loading);
+  private _photos = signal([] as Photo[]);
+  private _searchTerm = signal('');
+  private _page = signal(1);
+  private _pages = signal(1);
+  private _loading = signal(false);
+  private _error = signal<unknown>('');
 
-  private readonly endOfPage$ = this.select(
-    this.page$,
-    this.pages$,
-    (page, pages) => page === pages,
-  );
+  photos = this._photos.asReadonly();
+  searchTerm = this._searchTerm.asReadonly();
+  page = this._page.asReadonly();
+  pages = this._pages.asReadonly();
+  loading = this._loading.asReadonly();
+  error = this._error.asReadonly();
 
-  readonly vm$ = this.select(
-    {
-      photos: this.photos$,
-      search: this.search$,
-      page: this.page$,
-      pages: this.pages$,
-      endOfPage: this.endOfPage$,
-      loading: this.loading$,
-      error: this.error$,
-    },
-    { debounce: true },
-  );
+  endOfPage = computed(() => this._page() === this._pages());
 
-  ngrxOnStoreInit() {
+  constructor() {
     const savedJSONState = localStorage.getItem(PHOTO_STATE_KEY);
-    if (savedJSONState === null) {
-      this.setState(initialState);
-    } else {
-      const savedState = JSON.parse(savedJSONState);
-      this.setState({
-        ...initialState,
-        search: savedState.search,
-        page: savedState.page,
-      });
+    if (savedJSONState) {
+      const savedState = JSON.parse(savedJSONState) as LocalStorageData;
+      this._searchTerm.set(savedState.search);
+      this._page.set(savedState.page);
     }
+
+    this.searchPhotos().pipe(takeUntilDestroyed()).subscribe();
   }
 
-  ngrxOnStateInit() {
-    this.searchPhotos(
-      this.select({
-        search: this.search$,
-        page: this.page$,
+  search(searchTerm: string) {
+    this._searchTerm.set(searchTerm);
+    this._page.set(1);
+  }
+
+  nextPage() {
+    this._page.set(Math.min(this._page() + 1, this._pages()));
+  }
+
+  previousPage() {
+    this._page.set(Math.max(this._page() - 1, 1));
+  }
+
+  private searchPhotos(): Observable<void> {
+    return toObservable(
+      computed(() => ({ search: this._searchTerm(), page: this._page() })),
+    ).pipe(
+      filter(({ search }) => search.length >= 3),
+      switchMap(({ search, page }) => {
+        this._loading.set(true);
+        this._error.set('');
+        return this.photoService.searchPublicPhotos(search, page).pipe(
+          tap({
+            next: ({ photos: { photo, pages } }) => {
+              this._loading.set(false);
+              this._photos.set(photo);
+              this._pages.set(pages);
+
+              const savedState: LocalStorageData = { search, page };
+              localStorage.setItem(PHOTO_STATE_KEY, JSON.stringify(savedState));
+            },
+            error: (error: unknown) => {
+              this._error.set(error);
+              this._loading.set(false);
+            },
+          }),
+          map(() => {}),
+        );
       }),
     );
   }
-
-  readonly search = this.updater(
-    (state, search: string): PhotoState => ({
-      ...state,
-      search,
-      page: 1,
-    }),
-  );
-
-  readonly nextPage = this.updater(
-    (state): PhotoState => ({
-      ...state,
-      page: state.page + 1,
-    }),
-  );
-
-  readonly previousPage = this.updater(
-    (state): PhotoState => ({
-      ...state,
-      page: state.page - 1,
-    }),
-  );
-
-  readonly searchPhotos = this.effect<{ search: string; page: number }>(
-    pipe(
-      filter(({ search }) => search.length >= 3),
-      tap(() => this.patchState({ loading: true, error: '' })),
-      mergeMap(({ search, page }) =>
-        this.photoService.searchPublicPhotos(search, page).pipe(
-          tapResponse(
-            ({ photos: { photo, pages } }) => {
-              this.patchState({
-                loading: false,
-                photos: photo,
-                pages,
-              });
-              localStorage.setItem(
-                PHOTO_STATE_KEY,
-                JSON.stringify({ search, page }),
-              );
-            },
-            (error: unknown) => this.patchState({ error, loading: false }),
-          ),
-        ),
-      ),
-    ),
-  );
 }
