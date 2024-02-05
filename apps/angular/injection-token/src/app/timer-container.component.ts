@@ -1,6 +1,6 @@
-import { Component } from '@angular/core';
-import { DEFAULT_TIMER } from './data';
+import { Component, Inject } from '@angular/core';
 import { TimerComponent } from './timer.component';
+
 @Component({
   selector: 'timer-container',
   standalone: true,
@@ -17,5 +17,9 @@ import { TimerComponent } from './timer.component';
   },
 })
 export class TimerContainerComponent {
-  timer = DEFAULT_TIMER;
+  constructor(@Inject(TimerComponent.INTERVAL) protected timer: number) {}
+}
+// eslint-disable-next-line @typescript-eslint/no-namespace
+export namespace TimerContainerComponent {
+  export const INTERVAL = TimerComponent.INTERVAL;
 }
