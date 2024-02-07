@@ -1,23 +1,45 @@
 import { NgFor } from '@angular/common';
-import { Component } from '@angular/core';
+import { Component, Pipe, PipeTransform } from '@angular/core';
 import { PersonUtils } from './person.utils';
+
+@Pipe({
+  name: 'func',
+  pure: true,
+  standalone: true,
+})
+export class FuncPipe implements PipeTransform {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  transform<T, F extends (value: T, ...args: any[]) => any>(
+    value: T,
+    f: F,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ...args: F extends (value: T, ...args: infer Args) => any ? Args : []
+  ): ReturnType<F> {
+    return f(value, ...args);
+  }
+}
 
 @Component({
   standalone: true,
-  imports: [NgFor],
+  imports: [NgFor, FuncPipe],
   selector: 'app-root',
   template: `
     <div *ngFor="let activity of activities">
       {{ activity.name }} :
       <div
         *ngFor="let person of persons; let index = index; let isFirst = first">
-        {{ showName(person.name, index) }}
-        {{ isAllowed(person.age, isFirst, activity.minimumAge) }}
+        {{ person.name | func: PersonUtils.showName : index }}
+        {{
+          person.age
+            | func: PersonUtils.isAllowed : isFirst : activity.minimumAge
+        }}
       </div>
     </div>
   `,
 })
 export class AppComponent {
+  PersonUtils = PersonUtils;
+
   persons = [
     { name: 'Toto', age: 10 },
     { name: 'Jack', age: 15 },
@@ -29,8 +51,4 @@ export class AppComponent {
     { name: 'hiking', minimumAge: 25 },
     { name: 'dancing', minimumAge: 1 },
   ];
-
-  showName = PersonUtils.showName;
-
-  isAllowed = PersonUtils.isAllowed;
 }
