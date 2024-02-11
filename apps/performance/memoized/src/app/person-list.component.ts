@@ -1,11 +1,12 @@
-import { Component, Input } from '@angular/core';
-
 import { CommonModule } from '@angular/common';
+import { Component, Input } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatListModule } from '@angular/material/list';
+import { memoize } from 'lodash-es';
+
 import { Person } from './person.model';
 
 const fibonacci = (num: number): number => {
@@ -58,7 +59,5 @@ export class PersonListComponent {
 
   label = '';
 
-  calculate(num: number) {
-    return fibonacci(num);
-  }
+  calculate = memoize(fibonacci);
 }
