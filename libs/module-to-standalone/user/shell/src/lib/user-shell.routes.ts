@@ -13,7 +13,7 @@ export const userShellRoutes: Route[] = [
         path: 'home',
         loadChildren: () =>
           import('@angular-challenges/module-to-standalone/user/home').then(
-            (m) => m.userHomeRoutes,
+            (m) => m.UserHomeComponent,
           ),
       },
       {
