@@ -1,33 +1,35 @@
 /* eslint-disable @angular-eslint/component-selector */
-import { Component, Input } from '@angular/core';
+import { Component } from '@angular/core';
 import { TextComponent } from './text.component';
 
 export type StaticTextType = 'normal' | 'warning' | 'error';
 
+/**
+ * Supported CSS classes:
+ *
+ *   - `warning`
+ *   - `error`
+ */
 @Component({
   selector: 'static-text',
   standalone: true,
   imports: [TextComponent],
   template: `
-    <text [font]="font" [color]="color">This is a static text</text>
+    <text>This is a static text</text>
+  `,
+  styles: `
+    text {
+      --app-text-font: 10px;
+      --app-text-color: black;
+    }
+    :host-context(.warning) text {
+      --app-text-font: 25px;
+      --app-text-color: orange;
+    }
+    :host-context(.error) text {
+      --app-text-font: 30px;
+      --app-text-color: red;
+    }
   `,
 })
-export class TextStaticComponent {
-  @Input() set type(type: StaticTextType) {
-    switch (type) {
-      case 'error': {
-        this.font = 30;
-        this.color = 'red';
-        break;
-      }
-      case 'warning': {
-        this.font = 25;
-        this.color = 'orange';
-        break;
-      }
-    }
-  }
-
-  font = 10;
-  color = 'black';
-}
+export class TextStaticComponent {}

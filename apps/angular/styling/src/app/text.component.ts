@@ -1,16 +1,25 @@
 /* eslint-disable @angular-eslint/component-selector */
-import { Component, Input } from '@angular/core';
+import { Component } from '@angular/core';
 
+/**
+ * Supported CSS variables:
+ *
+ *   - `--app-text-font`: font size
+ *   - `--app-text-color`: text color
+ */
 @Component({
   selector: 'text',
   standalone: true,
   template: `
-    <p style="font-size: {{ font }}px; color: {{ color }}">
+    <p>
       <ng-content></ng-content>
     </p>
   `,
+  styles: `
+    p {
+      font-size: var(--app-text-font);
+      color: var(--app-text-color);
+    }
+  `,
 })
-export class TextComponent {
-  @Input() font = 10;
-  @Input() color = 'black';
-}
+export class TextComponent {}
