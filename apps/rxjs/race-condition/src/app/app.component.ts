@@ -1,13 +1,14 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   inject,
-  OnInit,
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatDialog } from '@angular/material/dialog';
-import { take } from 'rxjs';
+import { Subject, combineLatest, take } from 'rxjs';
 import { TopicModalComponent } from './topic-dialog.component';
-import { TopicService, TopicType } from './topic.service';
+import { TopicService } from './topic.service';
 
 @Component({
   standalone: true,
@@ -17,24 +18,32 @@ import { TopicService, TopicType } from './topic.service';
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class AppComponent implements OnInit {
-  title = 'rxjs-race-condition';
-  dialog = inject(MatDialog);
-  topicService = inject(TopicService);
-  topics: TopicType[] = [];
+export class AppComponent {
+  private openTopicModal$$ = new Subject<void>();
 
-  ngOnInit(): void {
-    this.topicService
-      .fakeGetHttpTopic()
-      .pipe(take(1))
-      .subscribe((topics) => (this.topics = topics));
+  constructor() {
+    const destroyRef = inject(DestroyRef);
+    const dialog = inject(MatDialog);
+    const topicService = inject(TopicService);
+
+    destroyRef.onDestroy(() => this.openTopicModal$$.complete());
+
+    // It would be better to just hide the button until topics are loaded like here:
+    // https://github.com/tomalaforge/angular-challenges/pull/173/files.
+    // But I guess, the topic of this exercise is RxJS
+    combineLatest([
+      topicService.fakeGetHttpTopic().pipe(take(1)),
+      this.openTopicModal$$,
+    ])
+      .pipe(takeUntilDestroyed())
+      .subscribe(([topics, _]) => {
+        dialog.open(TopicModalComponent, {
+          data: { topics },
+        });
+      });
   }
 
   openTopicModal() {
-    this.dialog.open(TopicModalComponent, {
-      data: {
-        topics: this.topics,
-      },
-    });
+    this.openTopicModal$$.next();
   }
 }
