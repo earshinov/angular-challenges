@@ -1,10 +1,59 @@
-import { NgFor, NgIf } from '@angular/common';
-import { Component, Input } from '@angular/core';
-import { randStudent, randTeacher } from '../../data-access/fake-http.service';
-import { StudentStore } from '../../data-access/student.store';
-import { TeacherStore } from '../../data-access/teacher.store';
-import { CardType } from '../../model/card.model';
+import { NgFor, NgIf, NgTemplateOutlet } from '@angular/common';
+import {
+  Component,
+  ContentChild,
+  Directive,
+  EventEmitter,
+  Input,
+  Output,
+  TemplateRef,
+  inject,
+} from '@angular/core';
 import { ListItemComponent } from '../list-item/list-item.component';
+
+export interface BaseCardItem {
+  id: number;
+}
+
+@Directive({
+  selector: 'ng-template[header]',
+  standalone: true,
+})
+export class CardHeaderTemplateDirective {
+  static ngTemplateContextGuard(
+    dir: CardHeaderTemplateDirective,
+    ctx: unknown,
+  ): ctx is CardHeaderTemplateContext {
+    return true;
+  }
+
+  templateRef: TemplateRef<CardHeaderTemplateContext> = inject(TemplateRef, {
+    self: true,
+  });
+}
+export interface CardHeaderTemplateContext {}
+
+@Directive({
+  selector: 'ng-template[item]',
+  standalone: true,
+})
+export class CardItemTemplateDirective<T> {
+  @Input({ required: true }) items!: Iterable<T>;
+
+  static ngTemplateContextGuard<T>(
+    dir: CardItemTemplateDirective<T>,
+    ctx: unknown,
+  ): ctx is CardItemTemplateContext<T> {
+    return true;
+  }
+
+  templateRef: TemplateRef<CardItemTemplateContext<T>> = inject(TemplateRef, {
+    self: true,
+  });
+}
+export interface CardItemTemplateContext<T> {
+  $implicit: T;
+}
 
 @Component({
   selector: 'app-card',
@@ -12,50 +61,49 @@ import { ListItemComponent } from '../list-item/list-item.component';
     <div
       class="flex w-fit flex-col gap-3 rounded-md border-2 border-black p-4"
       [class]="customClass">
-      <img
-        *ngIf="type === CardType.TEACHER"
-        src="assets/img/teacher.png"
-        width="200px" />
-      <img
-        *ngIf="type === CardType.STUDENT"
-        src="assets/img/student.webp"
-        width="200px" />
+      <ng-container
+        *ngTemplateOutlet="tplHeader?.templateRef || null"></ng-container>
 
       <section>
         <app-list-item
           *ngFor="let item of list"
-          [name]="item.firstName"
-          [id]="item.id"
-          [type]="type"></app-list-item>
+          (deleteItem)="deleteItem.emit(item.id)">
+          <ng-container
+            *ngTemplateOutlet="
+              tplItem?.templateRef || null;
+              context: { $implicit: item }
+            "></ng-container>
+        </app-list-item>
       </section>
 
       <button
         class="rounded-sm border border-blue-500 bg-blue-300 p-2"
-        (click)="addNewItem()">
+        (click)="addItem.emit()">
         Add
       </button>
     </div>
   `,
   standalone: true,
-  imports: [NgIf, NgFor, ListItemComponent],
+  imports: [
+    NgIf,
+    NgFor,
+    ListItemComponent,
+    NgTemplateOutlet,
+    CardHeaderTemplateDirective,
+    CardItemTemplateDirective,
+  ],
 })
-export class CardComponent {
-  @Input() list: any[] | null = null;
-  @Input() type!: CardType;
+export class CardComponent<T extends BaseCardItem> {
+  @Input() list: T[] | undefined;
   @Input() customClass = '';
 
-  CardType = CardType;
+  @Output() addItem = new EventEmitter<void>();
+  @Output() deleteItem = new EventEmitter<number>();
 
-  constructor(
-    private teacherStore: TeacherStore,
-    private studentStore: StudentStore,
-  ) {}
-
-  addNewItem() {
-    if (this.type === CardType.TEACHER) {
-      this.teacherStore.addOne(randTeacher());
-    } else if (this.type === CardType.STUDENT) {
-      this.studentStore.addOne(randStudent());
-    }
-  }
+  @ContentChild(CardHeaderTemplateDirective) tplHeader:
+    | CardHeaderTemplateDirective
+    | undefined;
+  @ContentChild(CardItemTemplateDirective) tplItem:
+    | CardItemTemplateDirective<T>
+    | undefined;
 }

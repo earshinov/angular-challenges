@@ -1,17 +1,31 @@
 import { Component, OnInit } from '@angular/core';
-import { FakeHttpService } from '../../data-access/fake-http.service';
+import {
+  FakeHttpService,
+  randStudent,
+} from '../../data-access/fake-http.service';
 import { StudentStore } from '../../data-access/student.store';
-import { CardType } from '../../model/card.model';
 import { Student } from '../../model/student.model';
-import { CardComponent } from '../../ui/card/card.component';
+import {
+  CardComponent,
+  CardHeaderTemplateDirective,
+  CardItemTemplateDirective,
+} from '../../ui/card/card.component';
 
 @Component({
   selector: 'app-student-card',
   template: `
     <app-card
       [list]="students"
-      [type]="cardType"
-      customClass="bg-light-green"></app-card>
+      (addItem)="addItem()"
+      (deleteItem)="deleteItem($event)"
+      customClass="bg-light-green">
+      <ng-template [header]>
+        <img src="assets/img/student.webp" width="200px" />
+      </ng-template>
+      <ng-template [item] [items]="students" let-item>
+        {{ item.firstName }}
+      </ng-template>
+    </app-card>
   `,
   standalone: true,
   styles: [
@@ -21,11 +35,14 @@ import { CardComponent } from '../../ui/card/card.component';
       }
     `,
   ],
-  imports: [CardComponent],
+  imports: [
+    CardComponent,
+    CardHeaderTemplateDirective,
+    CardItemTemplateDirective,
+  ],
 })
 export class StudentCardComponent implements OnInit {
   students: Student[] = [];
-  cardType = CardType.STUDENT;
 
   constructor(
     private http: FakeHttpService,
@@ -34,7 +51,14 @@ export class StudentCardComponent implements OnInit {
 
   ngOnInit(): void {
     this.http.fetchStudents$.subscribe((s) => this.store.addAll(s));
-
     this.store.students$.subscribe((s) => (this.students = s));
+  }
+
+  protected addItem() {
+    this.store.addOne(randStudent());
+  }
+
+  protected deleteItem(id: number) {
+    this.store.deleteOne(id);
   }
 }
