@@ -1,6 +1,12 @@
 import { NgOptimizedImage } from '@angular/common';
-import { ChangeDetectionStrategy, Component, input } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  inject,
+  input,
+} from '@angular/core';
 import { RouterLinkWithHref } from '@angular/router';
+import { ActivePostTrackingService } from './active-post-tracking.service';
 import { posts } from './data';
 import { Post } from './post.model';
 
@@ -44,7 +50,7 @@ export class BlogThumbnailHeaderComponent {
         height="540"
         class="rounded-t-3xl"
         [priority]="post().id === '1'"
-        [class.app-post-img]="enableViewTransition()" />
+        [class.app-post-img]="activePostTracker.activePostId() === post().id" />
       <h2 class="p-3 text-3xl">{{ post().title }}</h2>
       <p class="p-3">{{ post().description }}</p>
       <blog-thumbnail-header [date]="post().date" />
@@ -57,7 +63,8 @@ export class BlogThumbnailHeaderComponent {
 })
 export class BlogThumbnailComponent {
   post = input.required<Post>();
-  enableViewTransition = input(false);
+
+  activePostTracker = inject(ActivePostTrackingService);
 }
 
 @Component({
@@ -70,8 +77,8 @@ export class BlogThumbnailComponent {
       Blog List
     </div>
     <div class="my-20 flex h-screen flex-col items-center gap-10 border p-10">
-      @for (post of posts; track post.id; let i = $index) {
-        <blog-thumbnail [post]="post" [enableViewTransition]="i === 0" />
+      @for (post of posts; track post.id) {
+        <blog-thumbnail [post]="post" />
       }
     </div>
   `,
