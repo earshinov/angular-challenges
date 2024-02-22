@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { ActivePostTrackingService } from './active-post-tracking.service';
+import { BlogScrollTrackingService } from './blog-scroll-tracking.service';
 
 @Component({
   standalone: true,
@@ -10,6 +11,6 @@ import { ActivePostTrackingService } from './active-post-tracking.service';
     <router-outlet />
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  providers: [ActivePostTrackingService],
+  providers: [ActivePostTrackingService, BlogScrollTrackingService],
 })
 export class AppComponent {}

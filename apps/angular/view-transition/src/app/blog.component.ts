@@ -2,13 +2,17 @@ import { NgOptimizedImage } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
+  OnInit,
   Signal,
   computed,
   inject,
   input,
+  signal,
 } from '@angular/core';
 import { RouterLinkWithHref } from '@angular/router';
 import { ActivePostTrackingService } from './active-post-tracking.service';
+import { BlogScrollTrackingService } from './blog-scroll-tracking.service';
 import { posts } from './data';
 import { PostAuthorComponent } from './post-author.component';
 import { Post } from './post.model';
@@ -78,10 +82,12 @@ export class BlogThumbnailComponent {
   protected enableViewTransition: Signal<boolean>;
 
   constructor() {
-    const activePostTracker = inject(ActivePostTrackingService);
-    this.enableViewTransition = computed(
-      () => activePostTracker.activePostId() === this.post().id,
-    );
+    const activePostTracker = inject(ActivePostTrackingService, {
+      optional: true,
+    });
+    this.enableViewTransition = !activePostTracker
+      ? signal(false)
+      : computed(() => activePostTracker.activePostId() === this.post().id);
   }
 }
 
@@ -102,6 +108,31 @@ export class BlogThumbnailComponent {
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export default class BlogComponent {
+export default class BlogComponent implements OnInit {
   posts = posts;
+
+  private scrollTracker = inject(BlogScrollTrackingService, {
+    optional: true,
+  });
+
+  constructor() {
+    const scrollTracker = this.scrollTracker;
+    if (scrollTracker) {
+      scrollTracker.setActive(true);
+
+      const destroyRef = inject(DestroyRef);
+      destroyRef.onDestroy(() => scrollTracker.setActive(false));
+    }
+  }
+
+  ngOnInit() {
+    const scrollTop = this.scrollTracker?.scrollTop;
+    if (scrollTop != null)
+      window.setTimeout(() => {
+        window.scrollTo({
+          top: scrollTop,
+          behavior: 'instant',
+        });
+      });
+  }
 }

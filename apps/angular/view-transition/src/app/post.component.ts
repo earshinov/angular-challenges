@@ -2,6 +2,7 @@ import { NgOptimizedImage } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
+  OnInit,
   computed,
   input,
 } from '@angular/core';
@@ -69,9 +70,16 @@ export class PostHeaderComponent {
   },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export default class PostComponent {
+export default class PostComponent implements OnInit {
   chapters = fakeTextChapters;
 
   id = input.required<string>();
   post = computed(() => posts.filter((p) => p.id === this.id())[0]);
+
+  ngOnInit() {
+    window.scrollTo({
+      top: 0,
+      behavior: 'instant',
+    });
+  }
 }
