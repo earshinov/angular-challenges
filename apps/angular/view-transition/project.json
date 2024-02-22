@@ -20,7 +20,7 @@
           "apps/angular/view-transition/src/favicon.ico",
           "apps/angular/view-transition/src/assets"
         ],
-        "styles": ["apps/angular/view-transition/src/styles.scss"],
+        "styles": ["apps/angular/view-transition/src/styles/main.scss"],
         "scripts": []
       },
       "configurations": {

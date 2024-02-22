@@ -1,0 +1,8 @@
+.app-post-img {
+  view-transition-name: post-img;
+}
+
+::view-transition-old(post-img),
+::view-transition-new(post-img) {
+  animation: none;
+}
