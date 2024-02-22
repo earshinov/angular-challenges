@@ -7,17 +7,18 @@ import {
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { fakeTextChapters, posts } from './data';
+import { PostAuthorComponent } from './post-author.component';
 
 @Component({
   selector: 'post-header',
   standalone: true,
-  imports: [NgOptimizedImage],
+  imports: [NgOptimizedImage, PostAuthorComponent],
   template: `
     <div class="relative">
       <img
         ngSrc="assets/profil.webp"
         alt=""
-        class="rounded-full border border-black p-0.5"
+        class="app-vt-post-author-avatar rounded-full border border-black p-0.5"
         width="50"
         height="50" />
       <img
@@ -25,10 +26,11 @@ import { fakeTextChapters, posts } from './data';
         alt=""
         width="30"
         height="30"
-        class="absolute -bottom-2 -right-2" />
+        class="app-vt-post-angular-icon absolute -bottom-2 -right-2" />
     </div>
-    <span class="text-md mt-2 font-bold uppercase">Thomas Laforge</span>
-    <span class="text-sm">{{ date() }}</span>
+    <app-post-author
+      class="app-vt-post-author mt-2"
+      [date]="date()"></app-post-author>
   `,
   host: {
     class: 'flex flex-col justify-center items-center',
@@ -54,7 +56,7 @@ export class PostHeaderComponent {
         alt=""
         width="960"
         height="540"
-        class="app-post-img" />
+        class="app-vt-post-img" />
       <h2 class="p-7 text-center text-5xl">{{ post().title }}</h2>
       <post-header [date]="post().date" class="mb-20" />
       @for (chapter of chapters; track $index) {

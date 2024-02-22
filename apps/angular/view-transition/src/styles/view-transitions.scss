@@ -1,8 +1,11 @@
-.app-post-img {
-  view-transition-name: post-img;
-}
+/* vt = View Transition */
+@each $x in ("post-img", "post-author", "post-author-avatar", "post-angular-icon") {
+  .app-vt-#{$x} {
+    view-transition-name: #{$x};
+  }
 
-::view-transition-old(post-img),
-::view-transition-new(post-img) {
-  animation: none;
+  ::view-transition-old(#{$x}),
+  ::view-transition-new(#{$x}) {
+    animation: none;
+  }
 }
