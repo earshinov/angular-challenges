@@ -14,7 +14,7 @@ import { PostAuthorComponent } from './post-author.component';
   standalone: true,
   imports: [NgOptimizedImage, PostAuthorComponent],
   template: `
-    <div class="relative">
+    <div class="relative mb-2">
       <img
         ngSrc="assets/profil.webp"
         alt=""
@@ -29,7 +29,7 @@ import { PostAuthorComponent } from './post-author.component';
         class="app-vt-post-angular-icon absolute -bottom-2 -right-2" />
     </div>
     <app-post-author
-      class="app-vt-post-author mt-2"
+      class="app-vt-post-author"
       [date]="date()"></app-post-author>
   `,
   host: {

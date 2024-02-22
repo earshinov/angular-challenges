@@ -9,7 +9,8 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
   changeDetection: ChangeDetectionStrategy.OnPush,
   standalone: true,
   host: {
-    class: 'flex flex-col justify-center',
+    class: 'flex flex-col gap-0.5',
+    style: 'line-height: normal',
   },
 })
 export class PostAuthorComponent {

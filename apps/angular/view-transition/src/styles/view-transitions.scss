@@ -4,8 +4,15 @@
     view-transition-name: #{$x};
   }
 
-  ::view-transition-old(#{$x}),
+  ::view-transition-group(#{$x}) {
+    animation-duration: .4s !important;
+  }
+
+  ::view-transition-old(#{$x}) {
+    animation: none;
+  }
   ::view-transition-new(#{$x}) {
     animation: none;
+    display: none;
   }
 }

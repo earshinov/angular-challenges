@@ -28,7 +28,6 @@ import { Post } from './post.model';
         [class.app-vt-post-author-avatar]="enableViewTransition()" />
       <app-post-author
         [date]="date()"
-        class="gap-0.5"
         [class.app-vt-post-author]="enableViewTransition()"></app-post-author>
     </div>
     <img
