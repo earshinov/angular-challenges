@@ -8,3 +8,7 @@ body {
   margin: 0;
   font-family: Roboto, 'Helvetica Neue', sans-serif;
 }
+
+.app-snack-bar-error {
+  --mdc-snackbar-container-color: #cc0000;
+}
