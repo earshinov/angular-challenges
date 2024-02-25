@@ -9,6 +9,7 @@ import {
   Output,
   ViewChild,
 } from '@angular/core';
+import React from 'react';
 import { createRoot, Root } from 'react-dom/client';
 
 import ReactPost from './ReactPost';
@@ -43,18 +44,18 @@ export class PostComponent implements AfterViewInit, OnChanges, OnDestroy {
   }
 
   private update() {
+    if (!this.reactRoot) return;
     const post = this.post();
-    this.reactRoot?.render(
-      ReactPost({
-        title: post?.title,
-        description: post?.description,
-        pictureLink: post?.pictureLink,
-        selected: this.isSelected(),
-        handleClick: () => {
-          this.selectPost.emit();
-        },
-      }),
-    );
+    const reactPost = ReactPost({
+      title: post?.title,
+      description: post?.description,
+      pictureLink: post?.pictureLink,
+      selected: this.isSelected(),
+      handleClick: () => {
+        this.selectPost.emit();
+      },
+    });
+    this.reactRoot.render(<React.StrictMode>{reactPost}</React.StrictMode>);
   }
 
   ngOnDestroy() {
