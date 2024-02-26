@@ -1,4 +1,39 @@
+/**
+ * References:
+ * - https://angularindepth.com/posts/1285/in-depth-guide-into-animations-in-angular
+ */
+
+import {
+  animate,
+  animation,
+  group,
+  query,
+  stagger,
+  style,
+  transition,
+  trigger,
+  useAnimation,
+} from '@angular/animations';
 import { Component } from '@angular/core';
+
+const anim = animation([
+  style({ opacity: 0, transform: 'translateX(-{{dx}}px)' }),
+  group([
+    animate(
+      '{{duration}}ms ease-in',
+      style({
+        opacity: 1,
+      }),
+    ),
+    // https://easings.net/#easeOutBack
+    animate(
+      '{{duration}}ms cubic-bezier(0.34, 1.56, 0.64, 1)',
+      style({
+        transform: 'translateX(0)',
+      }),
+    ),
+  ]),
+]);
 
 @Component({
   standalone: true,
@@ -20,7 +55,7 @@ import { Component } from '@angular/core';
   template: `
     <div class="mx-20 my-40 flex gap-5">
       <section>
-        <div>
+        <div [@fadeIn]>
           <h3>2008</h3>
           <p>
             Lorem ipsum dolor sit amet consectetur adipisicing elit. Vitae
@@ -30,7 +65,7 @@ import { Component } from '@angular/core';
           </p>
         </div>
 
-        <div>
+        <div [@fadeIn]>
           <h3>2010</h3>
           <p>
             Lorem ipsum dolor sit amet consectetur adipisicing elit. Vitae
@@ -40,7 +75,7 @@ import { Component } from '@angular/core';
           </p>
         </div>
 
-        <div>
+        <div [@fadeIn]>
           <h4>2012</h4>
           <p>
             Lorem ipsum dolor sit amet consectetur adipisicing elit. Vitae
@@ -51,7 +86,7 @@ import { Component } from '@angular/core';
         </div>
       </section>
 
-      <section>
+      <section [@stagger]>
         <div class="list-item">
           <span>Name:</span>
           <span>Samuel</span>
@@ -84,5 +119,24 @@ import { Component } from '@angular/core';
       </section>
     </div>
   `,
+  animations: [
+    trigger('fadeIn', [
+      transition(
+        ':enter',
+        useAnimation(anim, { params: { duration: 800, dx: 400 } }),
+      ),
+    ]),
+    trigger('stagger', [
+      transition(':enter', [
+        query('.list-item', [
+          stagger(
+            100,
+            useAnimation(anim, { params: { duration: 300, dx: 200 } }),
+          ),
+          // 100 * (6-1) + 300 = 800
+        ]),
+      ]),
+    ]),
+  ],
 })
 export class AppComponent {}
