@@ -14,12 +14,19 @@
  * https://github.com/typescript-eslint/typescript-eslint/tree/master/packages/eslint-plugin/src/rules
  */
 
-import { ESLintUtils } from '@typescript-eslint/utils';
+import { ESLintUtils, type TSESTree } from '@typescript-eslint/utils';
 
 // NOTE: The rule will be available in ESLint configs as "@nx/workspace/forbidden-enum"
 export const RULE_NAME = 'forbidden-enum';
 
-export const rule = ESLintUtils.RuleCreator(() => __filename)({
+const MESSAGES = {
+  'prefer-union-type': 'Prefer union types to enums',
+} as const;
+
+export const rule = ESLintUtils.RuleCreator(() => __filename)<
+  [],
+  keyof typeof MESSAGES
+>({
   name: RULE_NAME,
   meta: {
     type: 'problem',
@@ -28,10 +35,26 @@ export const rule = ESLintUtils.RuleCreator(() => __filename)({
       recommended: 'recommended',
     },
     schema: [],
-    messages: {},
+    messages: MESSAGES,
+    fixable: 'code',
   },
   defaultOptions: [],
   create(context) {
-    return {};
+    return {
+      'TSEnumDeclaration:exit'(node) {
+        context.report({
+          node,
+          messageId: 'prefer-union-type',
+          fix(fixer) {
+            const replacement = `type ${node.id.name} = ${node.members.map((member) => quote((member.id as TSESTree.Identifier).name)).join(' | ')};`;
+            return [fixer.replaceText(node, replacement)];
+          },
+        });
+      },
+    };
   },
 });
+
+function quote(s: string): string {
+  return `"${s}"`;
+}
