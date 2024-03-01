@@ -1,3 +1,4 @@
+import { UserComponent } from '@angular-challenges/static-dynamic-import/users';
 import { ApplicationConfig } from '@angular/core';
 import { provideAnimations } from '@angular/platform-browser/animations';
 import { provideRouter } from '@angular/router';
@@ -8,8 +9,7 @@ export const appConfig: ApplicationConfig = {
     provideRouter([
       {
         path: '',
-        loadComponent: () =>
-          import('@angular-challenges/static-dynamic-import/users'),
+        component: UserComponent,
       },
     ]),
   ],
