@@ -1,0 +1,12 @@
+import { BASE_URL } from '@angular-challenges/fake-utils';
+import { HttpClient } from '@angular/common/http';
+import { Injectable, inject } from '@angular/core';
+import { <%= name_pascal %> } from './<% name_lower %>.model';
+
+@Injectable({ providedIn: 'root' })
+export class <%= name_pascal %>Service {
+  private http = inject(HttpClient);
+  private BASE_URL = inject(BASE_URL);
+
+  loadUsers = () => this.http.get<<%= name_pascal %>[]>(`${this.BASE_URL}/<%= name_plural_snake %>`);
+}

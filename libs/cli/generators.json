@@ -9,6 +9,11 @@
       "factory": "./src/generators/readme/generator",
       "schema": "./src/generators/readme/schema.json",
       "description": "readme generator"
+    },
+    "component-with-store": {
+      "factory": "./src/generators/component-with-store/generator",
+      "schema": "./src/generators/component-with-store/schema.json",
+      "description": "Generates a component together with an @ngrx/component-store (https://angular-challenges.vercel.app/challenges/nx/26-generator-comp/)"
     }
   }
 }

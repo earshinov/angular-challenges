@@ -1,0 +1,58 @@
+import { Injectable, inject } from '@angular/core';
+import { ComponentStore, OnStateInit<% if (createService) { %>, OnStoreInit<% } %>, tapResponse } from '@ngrx/component-store';
+<% if (createService) { %>import { switchMap, pipe, tap } from 'rxjs';
+<% } %>import { <%= name_pascal %> } from './<%= name_lower %>.model';
+<% if (createService) { %>import { <%= name_pascal %>Service } from './<%= name_lower %>.service';
+<% } %>
+
+export interface <%= name_pascal %>State {
+  <%= name_plural_snake %>: <%= name_pascal %>[];
+  <% if (createService) { %>loading: boolean;
+  error?: string;
+<% } %>}
+
+const initialState: <%= name_pascal %>State = {
+  <%= name_plural_snake %>: [],
+  <% if (createService) { %>loading: false,
+  error: undefined,
+<% } %>};
+
+@Injectable()
+export class <%= name_pascal %>Store extends ComponentStore<<%= name_pascal %>State> implements OnStateInit<% if (createService) { %>, OnStoreInit<% } %> {
+  <% if (createService) { %>private <%= name_snake %>Service = inject(<%= name_pascal %>Service);
+
+  <% } %>private readonly <%= name_plural_snake %>$ = this.select((state) => state.<%= name_plural_snake %>);
+  <% if (createService) { %>private readonly loading$ = this.select((state) => state.loading);
+  private readonly error$ = this.select((state) => state.error);
+  <% } %>
+  readonly vm$ = this.select(
+    {
+      <%= name_plural_snake %>: this.<%= name_plural_snake %>$,
+      <% if (createService) { %>loading: this.loading$,
+      error: this.error$,
+    <% } %>},
+    { debounce: true },
+  );
+
+  ngrxOnStateInit() {
+    this.setState(initialState);
+  }<% if (createService) { %>
+
+  ngrxOnStoreInit() {
+    this.load<%= name_plural_pascal %>();
+  }
+
+  readonly load<%= name_plural_pascal %> = this.effect<void>(
+    pipe(
+      tap(() => this.patchState({ loading: true })),
+      switchMap(() =>
+        this.<%= name_snake %>Service.load<%= name_plural_pascal %>().pipe(
+          tapResponse(
+            (<%= name_plural_snake %>) => this.patchState({ <%= name_plural_snake %>, loading: false }),
+            (err: string) => this.patchState({ error: err, loading: false }),
+          ),
+        ),
+      ),
+    ),
+  );<% } %>
+}

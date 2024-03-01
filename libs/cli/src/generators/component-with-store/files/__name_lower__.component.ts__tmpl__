@@ -1,0 +1,21 @@
+import { Component, ChangeDetectionStrategy, inject } from '@angular/core';
+import { LetDirective } from '@ngrx/component';
+import { provideComponentStore } from '@ngrx/component-store';
+
+import { <%= name_pascal %>Store } from './<%= name_lower %>.store';
+
+@Component({
+  selector: 'app-<%= name_dashed %>',
+  standalone: true,
+  imports: [LetDirective],
+  providers: [provideComponentStore(<%= name_pascal %>Store)],
+  <% if (inlineTemplate) { %>template: `
+    <ng-container *ngrxLet="vm$ as vm">// do things</ng-container>
+  `,<% } else { %>templateUrl: './<%= name_lower %>.component.html',<% } %>
+  changeDetection: ChangeDetectionStrategy.OnPush,
+})
+export class UserComponent {
+  private <%= name_snake %>Store = inject(<%= name_pascal %>Store);
+
+  readonly vm$ = this.<%= name_snake %>Store.vm$;
+}
