@@ -9,6 +9,11 @@
       "factory": "./src/generators/feature-component/generator",
       "schema": "./src/generators/feature-component/schema.json",
       "description": "feature-component generator"
+    },
+    "custom-library": {
+      "factory": "./src/generators/custom-library/generator",
+      "schema": "../../node_modules/@nx/angular/src/generators/library/schema.json",
+      "description": "Generates an Angular library.  Patches the built-in nx/angular:library generator"
     }
   }
 }
