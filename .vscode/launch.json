@@ -7,7 +7,17 @@
     {
       "type": "node",
       "request": "launch",
-      "name": "npx nx generate @angular-challenges/custom-plugin:custom-library",
+      "name": "nx test",
+      // npx nx test testing-modal
+      "runtimeExecutable": "npx",
+      "program": "nx",
+      "args": ["test", "testing-modal"]
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "nx generate",
+      // npx nx generate @angular-challenges/custom-plugin:custom-library
       "runtimeExecutable": "npx",
       "program": "nx",
       "args": [
