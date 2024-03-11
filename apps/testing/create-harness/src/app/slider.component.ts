@@ -12,7 +12,7 @@ import { skip } from 'rxjs';
     <mat-card class="items-center">
       <mat-card-content>
         <div class="flex items-center gap-10">
-          <button id="minusButton" mat-mini-fab (click)="back()">
+          <button aria-label="Decrease" mat-mini-fab (click)="back()">
             <mat-icon>arrow_back_ios</mat-icon>
           </button>
           {{ minValue }}
@@ -28,7 +28,7 @@ import { skip } from 'rxjs';
               (valueChange)="value.set($event)" />
           </mat-slider>
           {{ maxValue }}
-          <button id="plusButton" mat-mini-fab (click)="forward()">
+          <button aria-label="Increase" mat-mini-fab (click)="forward()">
             <mat-icon>arrow_forward_ios</mat-icon>
           </button>
         </div>
