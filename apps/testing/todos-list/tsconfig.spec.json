@@ -3,7 +3,9 @@
   "compilerOptions": {
     "outDir": "../../../dist/out-tsc",
     "module": "commonjs",
-    "types": ["jest", "node", "@testing-library/jest-dom"]
+    "types": ["jest", "node", "@testing-library/jest-dom"],
+    // https://github.com/angular/components/issues/21632#issuecomment-764975917
+    "target": "ES2016"
   },
   "files": ["src/test-setup.ts"],
   "include": [

@@ -8,10 +8,11 @@
       "type": "node",
       "request": "launch",
       "name": "nx test",
-      // npx nx test testing-modal
+      // npx nx test testing-todos-list
       "runtimeExecutable": "npx",
       "program": "nx",
-      "args": ["test", "testing-modal"]
+      "args": ["test", "testing-todos-list"],
+      "console": "integratedTerminal"
     },
     {
       "type": "node",
