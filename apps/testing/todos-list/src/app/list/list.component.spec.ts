@@ -1,107 +1,31 @@
 import { TestBed } from '@angular/core/testing';
 import { ReactiveFormsModule } from '@angular/forms';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
+import { Router } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
-import { render, screen } from '@testing-library/angular';
+import { render, screen, within } from '@testing-library/angular';
 import { userEvent as user } from '@testing-library/user-event';
 import { Observable, of, throwError } from 'rxjs';
-import { Locator } from '../../testing';
+import { TICKETS, USERS } from '../../../test/data';
+import { HarnessEnvironment } from '../../../test/harness-environment';
 import { BackendService, Ticket, User } from '../backend.service';
 import { ListComponent } from './list.component';
-import { RowComponentHarness } from './ui/row.harness';
+import { RowComponentTesting } from './ui/row.component.testing';
 
-const USERS = [
-  { id: 1, name: 'titi' },
-  { id: 2, name: 'george' },
-];
-
-const TICKETS: Ticket[] = [
-  {
-    id: 0,
-    description: 'Install a monitor arm',
-    assigneeId: 1,
-    completed: false,
-  },
-  {
-    id: 1,
-    description: 'Coucou',
-    assigneeId: 1,
-    completed: false,
-  },
-];
-
-type Public<T> = { [k in keyof T]: T[k] };
-
-class FakeBackendService implements Public<BackendService> {
-  get storedTickets(): Ticket[] {
-    throw new Error('Property not implemented.');
-  }
-  get storedUsers(): User[] {
-    throw new Error('Property not implemented.');
-  }
-  get lastId(): number {
-    throw new Error('Property not implemented.');
-  }
+class FakeBackendService implements Partial<BackendService> {
   tickets(): Observable<Ticket[]> {
     return of(TICKETS);
   }
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  ticket(id: number): Observable<Ticket | undefined> {
-    throw new Error('Method not implemented.');
-  }
   users(): Observable<User[]> {
     return of(USERS);
-  }
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  user(id: number): Observable<User | undefined> {
-    throw new Error('Method not implemented.');
-  }
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  newTicket(payload: { description: string }): Observable<Ticket> {
-    throw new Error('Method not implemented.');
-  }
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  assign(
-    ticketId: number,
-    userId: number,
-  ): Observable<{
-    assigneeId: number | null;
-    description: string;
-    completed: boolean;
-    id: number;
-  }> {
-    throw new Error('Method not implemented.');
-  }
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  complete(
-    ticketId: number,
-    completed: boolean,
-  ): Observable<{
-    assigneeId: number | null;
-    description: string;
-    completed: boolean;
-    id: number;
-  }> {
-    throw new Error('Method not implemented.');
-  }
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  update(
-    ticketId: number,
-    updates: Partial<Omit<Ticket, 'id'>>,
-  ): Observable<{
-    assigneeId: number | null;
-    description: string;
-    completed: boolean;
-    id: number;
-  }> {
-    throw new Error('Method not implemented.');
   }
 }
 
 async function setup({
   backendService,
 }: {
-  backendService?: Public<BackendService>;
+  backendService?: Partial<BackendService>;
 } = {}) {
   await TestBed.configureTestingModule({
     imports: [
@@ -123,14 +47,21 @@ async function setup({
   const { fixture } = await render(ListComponent);
   fixture.detectChanges();
 
-  const locator = new Locator(fixture.debugElement);
-  return { fixture, locator };
+  const harnessEnv = new HarnessEnvironment(
+    fixture.debugElement.nativeElement,
+    fixture,
+  );
+  return { fixture, harnessEnv };
 }
+
+afterEach(() => {
+  jest.clearAllMocks();
+});
 
 describe('ListComponent', () => {
   describe('Given Install inside the search input', () => {
     it('Then one row is visible', async () => {
-      const { locator } = await setup({
+      const { fixture } = await setup({
         backendService: new FakeBackendService(),
       });
       await user.type(
@@ -138,7 +69,7 @@ describe('ListComponent', () => {
         'Install',
       );
       expect(
-        locator.getAllHarnesses(RowComponentHarness.with({})),
+        fixture.debugElement.queryAll(RowComponentTesting.by()),
       ).toHaveLength(1);
     });
   });
@@ -146,7 +77,7 @@ describe('ListComponent', () => {
   describe('When typing a description and clicking on add a new ticket', () => {
     describe('Given a success answer from API', () => {
       it('Then ticket with the description is added to the list with unassigned status', async () => {
-        const { fixture, locator } = await setup();
+        const { fixture } = await setup();
         await fixture.whenStable();
         fixture.detectChanges();
 
@@ -160,18 +91,23 @@ describe('ListComponent', () => {
         await fixture.whenStable();
         fixture.detectChanges();
 
-        const row = locator.getHarness(
-          RowComponentHarness.with({ description: 'Test123' }),
+        const row = fixture.debugElement.query(
+          RowComponentTesting.by({ text: /Description:? Test123/i }),
         );
-        expect(row.assignee).toMatch(/Unassigned/i);
+        expect(row).not.toBeNil();
+        expect(row!.nativeElement.textContent).toMatch(
+          /.*Assignee:? Unassigned.*/i,
+        );
       });
     });
 
     describe('Given a failure answer from API', () => {
       it('Then an error is displayed at the bottom of the list', async () => {
-        class TestBackendService extends FakeBackendService {
-          override newTicket = () =>
-            throwError(() => new Error('Network error'));
+        class TestBackendService
+          extends FakeBackendService
+          implements Pick<BackendService, 'newTicket'>
+        {
+          newTicket = () => throwError(() => new Error('Network error'));
         }
 
         const { fixture } = await setup({
@@ -190,10 +126,11 @@ describe('ListComponent', () => {
         await fixture.whenStable();
         fixture.detectChanges();
 
-        const errorEl =
-          fixture.debugElement.nativeElement.querySelector('.text-red-500');
-        expect(errorEl).not.toBeNull();
-        expect(errorEl.textContent).toContain(/Network error/i);
+        expect(
+          within(fixture.debugElement.nativeElement).getByText(
+            /Network error/i,
+          ),
+        ).not.toBeNil();
       });
     });
   });
@@ -201,37 +138,72 @@ describe('ListComponent', () => {
   describe('When assigning first ticket to george', () => {
     describe('Given a success answer from API', () => {
       it('Then first ticket is assigned to George', async () => {
-        class TestBackendService extends FakeBackendService {
-          override assign(ticketId: number, userId: number) {
+        class TestBackendService
+          extends FakeBackendService
+          implements Pick<BackendService, 'assign'>
+        {
+          assign(ticketId: number, userId: number) {
             const ticket = TICKETS.find((ticket) => ticket.id === ticketId);
-            if (!ticket)
-              return throwError(
-                () => new Error(`No ticket with id ${ticketId}`),
-              );
-            const updatedTicket = { ...ticket, assigneeId: userId };
+            expect(ticket).not.toBeNil();
+            const updatedTicket = { ...ticket!, assigneeId: userId };
             return of(updatedTicket);
           }
         }
 
-        const { fixture, locator } = await setup({
+        const { fixture, harnessEnv } = await setup({
           backendService: new TestBackendService(),
         });
 
-        const rows = locator.getHarness(
-          RowComponentHarness.with({ description: 'Install a monitor arm' }),
+        let row = fixture.debugElement.query(
+          RowComponentTesting.by({
+            text: /Description:? Install a monitor arm/i,
+          }),
         );
-        expect(rows.length).toBeGreaterThan(0);
-        const row = rows[0];
+        expect(row).not.toBeNil();
+        const rowTesting = new RowComponentTesting(harnessEnv, row);
+        await rowTesting.assignTo(/George/i);
 
-        await row.assignTo('george');
-
-        expect(row.assignee).toMatch(/Unassigned/i);
+        row = fixture.debugElement.query(
+          RowComponentTesting.by({
+            text: /Description:? Install a monitor arm/i,
+          }),
+        );
+        expect(row).not.toBeNil();
+        expect(row!.nativeElement.textContent).toMatch(
+          /.*Assignee:? George.*/i,
+        );
       });
     });
 
     describe('Given a failure answer from API', () => {
       it('Then an error is displayed at the bottom of the list', async () => {
-        //
+        class TestBackendService
+          extends FakeBackendService
+          implements Pick<BackendService, 'assign'>
+        {
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          assign(_ticketId: number, _userId: number) {
+            return throwError(() => new Error('Network error'));
+          }
+        }
+
+        const { fixture, harnessEnv } = await setup({
+          backendService: new TestBackendService(),
+        });
+
+        const row = fixture.debugElement.query(
+          RowComponentTesting.by({
+            text: /Description:? Install a monitor arm/i,
+          }),
+        );
+        expect(row).not.toBeNil();
+        const rowTesting = new RowComponentTesting(harnessEnv, row);
+        await rowTesting.assignTo(/George/i);
+        expect(
+          within(fixture.debugElement.nativeElement).getByText(
+            /Network error/i,
+          ),
+        ).not.toBeNil();
       });
     });
   });
@@ -239,20 +211,113 @@ describe('ListComponent', () => {
   describe('When finishing first ticket', () => {
     describe('Given a success answer from API', () => {
       it('Then first ticket is done', async () => {
-        //
+        class TestBackendService
+          extends FakeBackendService
+          implements Pick<BackendService, 'complete'>
+        {
+          complete(
+            ticketId: number,
+            completed: boolean,
+          ): Observable<{
+            assigneeId: number | null;
+            description: string;
+            completed: boolean;
+            id: number;
+          }> {
+            const ticket = TICKETS.find((ticket) => ticket.id === ticketId);
+            expect(ticket).not.toBeNil();
+            const updatedTicket = { ...ticket!, completed };
+            return of(updatedTicket);
+          }
+        }
+
+        const { fixture, harnessEnv } = await setup({
+          backendService: new TestBackendService(),
+        });
+
+        let row = fixture.debugElement.query(
+          RowComponentTesting.by({
+            text: /Description:? Install a monitor arm/i,
+          }),
+        );
+        expect(row).not.toBeNil();
+        expect(row!.nativeElement.textContent).toMatch(/.*Done:? false.*/i);
+        const rowTesting = new RowComponentTesting(harnessEnv, row);
+        await rowTesting.markDone();
+
+        row = fixture.debugElement.query(
+          RowComponentTesting.by({
+            text: /Description:? Install a monitor arm/i,
+          }),
+        );
+        expect(row).not.toBeNil();
+        expect(row!.nativeElement.textContent).toMatch(/.*Done:? true.*/i);
       });
     });
 
     describe('Given a failure answer from API', () => {
       it('Then an error is displayed at the bottom of the list', async () => {
-        //
+        class TestBackendService
+          extends FakeBackendService
+          implements Pick<BackendService, 'complete'>
+        {
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          complete(
+            _ticketId: number,
+            _completed: boolean,
+          ): Observable<{
+            assigneeId: number | null;
+            description: string;
+            completed: boolean;
+            id: number;
+          }> {
+            return throwError(() => new Error('Network error'));
+          }
+        }
+
+        const { fixture, harnessEnv } = await setup({
+          backendService: new TestBackendService(),
+        });
+
+        const row = fixture.debugElement.query(
+          RowComponentTesting.by({
+            text: /Description:? Install a monitor arm/i,
+          }),
+        );
+        expect(row).not.toBeNil();
+        expect(row!.nativeElement.textContent).toMatch(/.*Done:? false.*/i);
+        const rowTesting = new RowComponentTesting(harnessEnv, row);
+        await rowTesting.markDone();
+        expect(
+          within(fixture.debugElement.nativeElement).getByText(
+            /Network error/i,
+          ),
+        ).not.toBeNil();
       });
     });
   });
 
   describe('When clicking on first ticket', () => {
     it('Then we navigate to detail/0', async () => {
-      //
+      const { fixture } = await setup({
+        backendService: new FakeBackendService(),
+      });
+
+      const navigateByUrl = jest
+        .spyOn(Router.prototype, 'navigateByUrl')
+        .mockImplementation((x) => {
+          expect(x.toString().startsWith('/detail')).toBe(true);
+          return Promise.resolve(true);
+        });
+
+      const row = fixture.debugElement.query(
+        RowComponentTesting.by({
+          text: /Description:? Install a monitor arm/i,
+        }),
+      );
+      expect(row).not.toBeNil();
+      await user.click(within(row.nativeElement).getByText(/Ticket/i));
+      expect(navigateByUrl).toHaveBeenCalledTimes(1);
     });
   });
 });

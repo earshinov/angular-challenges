@@ -12,7 +12,8 @@
       "runtimeExecutable": "npx",
       "program": "nx",
       "args": ["test", "testing-todos-list"],
-      "console": "integratedTerminal"
+      "console": "integratedTerminal",
+      "sourceMaps": false
     },
     {
       "type": "node",
